@@ -1,0 +1,18 @@
+
+# Aviation Data Intelligence v1.1
+# Dependencias iniciais
+
+# Ingestao de dados via API
+requests
+python-dotenv
+
+# Processamento de dados
+pandas
+numpy
+
+# Integracao com PostgreSQL
+SQLAlchemy
+psycopg[binary]
+
+# Testes automatizados
+pytest

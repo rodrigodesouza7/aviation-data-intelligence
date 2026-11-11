@@ -1,0 +1,26 @@
+
+# Ambiente virtual
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Variaveis de ambiente e credenciais
+.env
+.env.*
+!.env.example
+
+# macOS
+.DS_Store
+
+# Editores
+.vscode/
+
+# Arquivos temporarios
+*.log
+*.tmp
