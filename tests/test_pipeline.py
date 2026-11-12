@@ -45,15 +45,12 @@ def test_pipeline_execution_order(mocked_pipeline):
 
     run_pipeline()
 
-    execution_order.assert_has_calls(
-        [
-            call("bronze"),
-            call("silver"),
-            call("gold"),
-        ]
-    )
+    assert execution_order.call_args_list == [
+        call("bronze"),
+        call("silver"),
+        call("gold"),
+    ]
 
-    assert execution_order.call_count == 3
     bronze.assert_called_once()
     silver.assert_called_once()
     gold.assert_called_once()
@@ -64,9 +61,14 @@ def test_pipeline_stops_if_bronze_fails(mocked_pipeline):
 
     bronze, silver, gold, _ = mocked_pipeline
 
-    bronze.side_effect = RuntimeError("Falha simulada na Bronze")
+    bronze.side_effect = RuntimeError(
+        "Falha simulada na Bronze"
+    )
 
-    with pytest.raises(RuntimeError, match="Falha simulada"):
+    with pytest.raises(
+        RuntimeError,
+        match="Falha simulada na Bronze",
+    ):
         run_pipeline()
 
     bronze.assert_called_once()
@@ -79,9 +81,14 @@ def test_pipeline_stops_if_silver_fails(mocked_pipeline):
 
     bronze, silver, gold, _ = mocked_pipeline
 
-    silver.side_effect = RuntimeError("Falha simulada na Silver")
+    silver.side_effect = RuntimeError(
+        "Falha simulada na Silver"
+    )
 
-    with pytest.raises(RuntimeError, match="Falha simulada"):
+    with pytest.raises(
+        RuntimeError,
+        match="Falha simulada na Silver",
+    ):
         run_pipeline()
 
     bronze.assert_called_once()
@@ -94,11 +101,67 @@ def test_pipeline_propagates_gold_failure(mocked_pipeline):
 
     bronze, silver, gold, _ = mocked_pipeline
 
-    gold.side_effect = RuntimeError("Falha simulada na Gold")
+    gold.side_effect = RuntimeError(
+        "Falha simulada na Gold"
+    )
 
-    with pytest.raises(RuntimeError, match="Falha simulada"):
+    with pytest.raises(
+        RuntimeError,
+        match="Falha simulada na Gold",
+    ):
         run_pipeline()
 
     bronze.assert_called_once()
     silver.assert_called_once()
     gold.assert_called_once()
+
+
+def test_reprocess_skips_bronze(mocked_pipeline):
+    """Reprocessamento não deve consultar a OpenSky."""
+
+    bronze, silver, gold, execution_order = mocked_pipeline
+
+    run_pipeline(mode="reprocess")
+
+    bronze.assert_not_called()
+    silver.assert_called_once()
+    gold.assert_called_once()
+
+    assert execution_order.call_args_list == [
+        call("silver"),
+        call("gold"),
+    ]
+
+
+def test_full_mode_runs_all_stages(mocked_pipeline):
+    """Modo completo executa todas as etapas."""
+
+    bronze, silver, gold, execution_order = mocked_pipeline
+
+    run_pipeline(mode="full")
+
+    bronze.assert_called_once()
+    silver.assert_called_once()
+    gold.assert_called_once()
+
+    assert execution_order.call_args_list == [
+        call("bronze"),
+        call("silver"),
+        call("gold"),
+    ]
+
+
+def test_invalid_pipeline_mode(mocked_pipeline):
+    """Modos inválidos devem ser rejeitados."""
+
+    bronze, silver, gold, _ = mocked_pipeline
+
+    with pytest.raises(
+        ValueError,
+        match="Modo de execução inválido",
+    ):
+        run_pipeline(mode="invalid")
+
+    bronze.assert_not_called()
+    silver.assert_not_called()
+    gold.assert_not_called()
