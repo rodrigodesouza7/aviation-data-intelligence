@@ -1,4 +1,6 @@
 
+"""Configuração e verificação da conexão com PostgreSQL."""
+
 import os
 from pathlib import Path
 
@@ -12,11 +14,28 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 load_dotenv(PROJECT_ROOT / ".env")
 
 
+def get_db_driver():
+    """Retorna o driver PostgreSQL configurado para o ambiente."""
+    driver = os.getenv("DB_DRIVER", "postgresql+psycopg")
+
+    allowed = {
+        "postgresql+psycopg",
+        "postgresql+psycopg2",
+    }
+
+    if driver not in allowed:
+        raise ValueError(
+            f"Driver PostgreSQL não suportado: {driver}"
+        )
+
+    return driver
+
+
 def get_engine():
-    """Cria o mecanismo de conexao com PostgreSQL."""
+    """Cria o mecanismo de conexão com PostgreSQL."""
 
     url = URL.create(
-        drivername="postgresql+psycopg",
+        drivername=get_db_driver(),
         username=os.getenv("DB_USER"),
         password=os.getenv("DB_PASSWORD") or None,
         host=os.getenv("DB_HOST", "localhost"),
@@ -28,7 +47,7 @@ def get_engine():
 
 
 def test_connection():
-    """Verifica a conexao e o banco selecionado."""
+    """Verifica a conexão e o banco selecionado."""
 
     engine = get_engine()
 
@@ -38,7 +57,7 @@ def test_connection():
                 text("SELECT current_database()")
             ).scalar_one()
 
-            print(f"Conexao estabelecida: {database}")
+            print(f"Conexão estabelecida: {database}")
     finally:
         engine.dispose()
 

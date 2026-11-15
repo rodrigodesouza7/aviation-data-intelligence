@@ -7,12 +7,16 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import URL
 
+from aviation.database.connection import get_db_driver
+
 
 def main():
+    """Transforma registros da camada Bronze para Silver."""
+
     load_dotenv()
 
     url = URL.create(
-        drivername="postgresql+psycopg",
+        drivername=get_db_driver(),
         username=os.environ["DB_USER"],
         password=os.getenv("DB_PASSWORD") or None,
         host=os.getenv("DB_HOST", "localhost"),
@@ -56,7 +60,10 @@ def main():
     try:
         with engine.begin() as connection:
             result = connection.execute(query)
-            print(f"Registros inseridos na Silver: {result.rowcount}")
+
+            print(
+                f"Registros inseridos na Silver: {result.rowcount}"
+            )
     finally:
         engine.dispose()
 

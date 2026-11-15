@@ -1,26 +1,90 @@
 
-# Ambiente virtual
+# ==========================================
+# Aviation Data Intelligence
+# .gitignore
+# ==========================================
+
+# Ambientes virtuais Python
 .venv/
 venv/
+env/
+ENV/
 
-# Python
+# Python: cache e arquivos compilados
 __pycache__/
 *.py[cod]
+*$py.class
 .pytest_cache/
-.coverage
-htmlcov/
+.mypy_cache/
+.ruff_cache/
 
-# Variaveis de ambiente e credenciais
+# Testes e cobertura
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.tox/
+.nox/
+
+# Variáveis de ambiente e credenciais
 .env
 .env.*
 !.env.example
 
+# Credenciais e chaves privadas
+*.pem
+*.key
+*.p12
+*.pfx
+
 # macOS
 .DS_Store
+.AppleDouble
+.LSOverride
 
-# Editores
+# Editores e IDEs
 .vscode/
+.idea/
+*.swp
+*.swo
 
-# Arquivos temporarios
+# Logs e arquivos temporários
 *.log
 *.tmp
+*.bak
+*.orig
+*.pid
+*.pid.lock
+
+# Dados locais e artefatos gerados
+data/raw/
+data/processed/
+data/tmp/
+logs/
+tmp/
+
+# Bancos de dados locais e backups
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.backup
+
+# Apache Airflow
+airflow.cfg
+airflow.db
+standalone_admin_password.txt
+webserver_config.py
+
+# Docker: arquivos locais de override
+compose.override.yaml
+docker-compose.override.yml
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Distribuição e empacotamento Python
+build/
+dist/
+*.egg-info/
+!.env.compose.example

@@ -1,0 +1,85 @@
+name: aviation-data-intelligence
+
+services:
+  # ==========================================
+  # PostgreSQL - Metadados do Apache Airflow
+  # ==========================================
+  airflow-db:
+    image: postgres:16
+
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: ${AIRFLOW_DB_PASSWORD:?Defina AIRFLOW_DB_PASSWORD}
+      POSTGRES_DB: airflow
+
+    volumes:
+      - airflow_metadata:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow -d airflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    restart: "no"
+
+  # ==========================================
+  # Apache Airflow - Orquestração do pipeline
+  # ==========================================
+  airflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    image: aviation-airflow:local
+
+    command: standalone
+
+    depends_on:
+      airflow-db:
+        condition: service_healthy
+
+    # Variáveis de conexão com o PostgreSQL
+    # de testes, armazenadas localmente.
+    env_file:
+      - .env.airflow
+
+    environment:
+      # Executor do Apache Airflow
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+
+      # Banco exclusivo de metadados do Airflow
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${AIRFLOW_DB_PASSWORD:?Defina AIRFLOW_DB_PASSWORD}@airflow-db:5432/airflow
+
+      # Configurações do ambiente local
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "false"
+
+      # Permite importar os módulos Python
+      # do projeto Aviation Data Intelligence
+      PYTHONPATH: /opt/airflow/project/src
+      DB_DRIVER: postgresql+psycopg2
+
+    ports:
+      # Interface web acessível somente
+      # pelo próprio computador
+      - "127.0.0.1:8080:8080"
+
+    volumes:
+      # DAGs do Apache Airflow
+      - ./dags:/opt/airflow/dags
+
+      # Código-fonte do pipeline (somente leitura)
+      - ./src:/opt/airflow/project/src:ro
+
+      # Logs persistentes do Airflow
+      - airflow_logs:/opt/airflow/logs
+
+    restart: "no"
+
+# ==========================================
+# Volumes persistentes
+# ==========================================
+volumes:
+  airflow_metadata:
+  airflow_logs:
