@@ -19,6 +19,17 @@ def save_bronze():
             "Resposta sem lista valida de aeronaves."
         )
 
+    timestamp = data.get("time")
+
+    if (
+        isinstance(timestamp, bool)
+        or not isinstance(timestamp, (int, float))
+        or not (0 < timestamp < 253402300800)
+    ):
+        raise ValueError(
+            "Timestamp invalido na resposta da OpenSky."
+        )
+
     engine = get_engine()
 
     try:
