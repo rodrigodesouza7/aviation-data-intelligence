@@ -32,6 +32,7 @@ def connection():
 
 
 def test_gold_matches_silver(connection):
+    """Valida os totais de aeronaves entre Silver e Gold."""
     query = text("""
         SELECT
             g.bronze_id,
@@ -74,6 +75,7 @@ def test_gold_matches_silver(connection):
 
 
 def test_gold_has_no_missing_silver_batches(connection):
+    """Verifica se todos os lotes Silver possuem resumo Gold."""
     query = text("""
         SELECT COUNT(*)
         FROM (
@@ -93,6 +95,7 @@ def test_gold_has_no_missing_silver_batches(connection):
 
 
 def test_gold_averages_match_silver(connection):
+    """Valida as médias de altitude e velocidade na Gold."""
     query = text("""
         SELECT
             g.bronze_id,
@@ -128,5 +131,22 @@ def test_gold_averages_match_silver(connection):
                 row["expected_velocity"]
             )
 
+
+def test_all_bronze_batches_have_gold_summary(connection):
+    """Verifica se todos os lotes Bronze possuem resumo Gold."""
+    query = text("""
+        SELECT b.id
+        FROM bronze.raw_aviation AS b
+        LEFT JOIN gold.air_traffic_summary AS g
+            ON g.bronze_id = b.id
+        WHERE g.bronze_id IS NULL
+        ORDER BY b.id
+    """)
+
+    missing_batches = connection.execute(query).scalars().all()
+
+    assert not missing_batches, (
+        f"Lotes Bronze sem resumo Gold: {missing_batches}"
+    )
 
 
