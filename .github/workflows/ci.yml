@@ -16,6 +16,29 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: aviation_ci
+          POSTGRES_PASSWORD: ci_test_password
+          POSTGRES_DB: aviation_data_intelligence_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U aviation_ci -d aviation_data_intelligence_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      PYTHONPATH: src
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_USER: aviation_ci
+      DB_PASSWORD: ci_test_password
+      DB_NAME: aviation_data_intelligence_test
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -31,7 +54,64 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
-      - name: Run automated tests
+      - name: Initialize test database
         env:
-          PYTHONPATH: src
+          PGPASSWORD: ci_test_password
+        run: |
+          for file in \
+            sql/00_create_schemas.sql \
+            sql/bronze/01_create_raw_aviation.sql \
+            sql/silver/01_create_aircraft_states.sql \
+            sql/gold/01_create_air_traffic_summary.sql
+          do
+            psql -h localhost -U aviation_ci \
+              -d aviation_data_intelligence_test \
+              -v ON_ERROR_STOP=1 -f "$file"
+          done
+
+      - name: Load synthetic test data
+        run: |
+          python - <<'PY'
+          import json
+          from sqlalchemy import create_engine, text
+          from sqlalchemy.engine import URL
+
+          url = URL.create(
+              "postgresql+psycopg",
+              username="aviation_ci",
+              password="ci_test_password",
+              host="localhost",
+              port=5432,
+              database="aviation_data_intelligence_test",
+          )
+
+          payload = {
+              "time": 1794515682,
+              "states": [
+                  [
+                      "abc123", "TEST001", "Brazil", None,
+                      None, -46.63, -23.55, 10000.0,
+                      False, 220.0,
+                  ]
+              ],
+          }
+
+          engine = create_engine(url)
+          with engine.begin() as conn:
+              conn.execute(
+                  text("""
+                      INSERT INTO bronze.raw_aviation
+                          (source, payload)
+                      VALUES
+                          ('ci_synthetic', CAST(:payload AS JSONB))
+                  """),
+                  {"payload": json.dumps(payload)},
+              )
+          engine.dispose()
+          PY
+
+          python -m aviation.processing.bronze_to_silver
+          python -m aviation.processing.silver_to_gold
+
+      - name: Run automated tests
         run: python -m pytest -q
