@@ -16,6 +16,7 @@ Construir um pipeline de dados organizado em três camadas:
 - PostgreSQL
 - SQLAlchemy
 - Pandas
+- Streamlit
 - Pytest
 - Docker e Docker Compose
 - Apache Airflow 2.9.3
@@ -46,6 +47,7 @@ O PostgreSQL armazena os dados do pipeline. O Airflow utiliza um banco PostgreSQ
 - `sql/`: scripts de criação dos schemas e tabelas.
 - `dags/`: definição dos workflows do Airflow.
 - `tests/`: testes automatizados.
+- `dashboard/app.py`: dashboard analítico desenvolvido com Streamlit.
 - `Dockerfile`: imagem local do Airflow.
 - `compose.yaml`: serviços Docker.
 - `requirements.txt`: dependências do ambiente Python local.
@@ -91,6 +93,20 @@ PYTHONPATH=src python -m aviation.pipeline --mode reprocess
 ```
 
 As transformações utilizam operações incrementais com tratamento de conflitos para evitar a reinserção dos mesmos registros.
+
+## Dashboard Streamlit
+
+O dashboard consulta a camada Gold do PostgreSQL e apresenta indicadores do ultimo snapshot, comparacao entre lotes por barras agrupadas e historico consolidado.
+
+Para iniciar, com o PostgreSQL ativo e o ambiente virtual configurado:
+
+```bash
+PYTHONPATH=src python -m streamlit run dashboard/app.py
+```
+
+Acesse http://localhost:8501.
+
+Os dados representam snapshots historicos, nao monitoramento em tempo real.
 
 ## Apache Airflow
 
@@ -154,7 +170,7 @@ Execute os testes automatizados:
 PYTHONPATH=src python -m pytest -q
 ```
 
-Na validação local realizada em novembro de 2026, os 13 testes existentes foram aprovados.
+Na validação local realizada em novembro de 2026, os 23 testes existentes foram aprovados.
 
 ## Segurança
 
@@ -172,4 +188,6 @@ O Airflow utiliza o driver `psycopg2`, compatível com a versão do SQLAlchemy p
 - DAG de reprocessamento manual validado no banco de testes.
 - A ingestão automática periódica pelo Airflow ainda não está implementada.
 - O ambiente Docker depende de um PostgreSQL acessível no host.
-- Os diretórios de dashboard e outras funcionalidades futuras não representam entregas concluídas.
+- Dashboard Streamlit implementado para visualização dos indicadores da camada Gold.
+- O histórico validado contém apenas dois snapshots reais, insuficientes para análise de tendências.
+- A aplicação não realiza monitoramento de tráfego aéreo em tempo real.

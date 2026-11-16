@@ -16,3 +16,6 @@ psycopg[binary]
 
 # Testes automatizados
 pytest
+
+# Dashboard analitico
+streamlit
