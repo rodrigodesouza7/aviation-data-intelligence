@@ -3,6 +3,8 @@
 import json
 import os
 
+import pytest
+
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import URL
 
@@ -11,7 +13,8 @@ from aviation.quality import get_quality_query
 
 
 def test_quality_metrics_for_synthetic_snapshot():
-    assert os.environ["DB_NAME"] == "aviation_data_intelligence_test"
+    if os.getenv("DB_NAME") != "aviation_data_intelligence_test":
+        pytest.skip("Teste de integração exclusivo do banco de testes")
     url = URL.create(
         get_db_driver(),
         username=os.environ["DB_USER"],
