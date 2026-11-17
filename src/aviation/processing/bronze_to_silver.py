@@ -40,6 +40,7 @@ def get_silver_query():
         ) AS state
         WHERE state->>0 IS NOT NULL
           AND raw.payload->>'time' IS NOT NULL
+          AND jsonb_typeof(raw.payload->'states') = 'array'
         ON CONFLICT (bronze_id, icao24) DO UPDATE SET
             callsign = EXCLUDED.callsign,
             origin_country = EXCLUDED.origin_country,
@@ -74,11 +75,18 @@ def get_stale_silver_cleanup_query():
         DELETE FROM silver.aircraft_states AS existing
         USING bronze.raw_aviation AS raw
         WHERE existing.bronze_id = raw.id
+          AND jsonb_typeof(raw.payload->'states') = 'array'
+          AND raw.payload->>'time' IS NOT NULL
           AND NOT EXISTS (
               SELECT 1
-              FROM jsonb_array_elements(raw.payload->'states') AS state
+              FROM jsonb_array_elements(
+                  CASE
+                      WHEN jsonb_typeof(raw.payload->'states') = 'array'
+                      THEN raw.payload->'states'
+                      ELSE '[]'::jsonb
+                  END
+              ) AS state
               WHERE state->>0 = existing.icao24
-                AND raw.payload->>'time' IS NOT NULL
           )
     """)
 
