@@ -143,6 +143,48 @@ def test_reprocessing_reconciles_changed_and_removed_aircraft():
                     """),
                     {"id": bronze_id},
                 ).scalar_one() == 0
+                # Snapshot válido novamente para verificar entradas incompletas.
+                conn.execute(
+                    text("""
+                        UPDATE bronze.raw_aviation
+                        SET payload = CAST(:payload AS JSONB)
+                        WHERE id = :id
+                    """),
+                    {
+                        "id": bronze_id,
+                        "payload": json.dumps({
+                            "time": 1794515685,
+                            "states": [state("abc123", 1000)],
+                        }),
+                    },
+                )
+                reconcile(conn)
+
+                # A ausência do array não pode apagar estados já processados.
+                for invalid_payload in (
+                    {"time": 1794515686},
+                    {"time": 1794515686, "states": None},
+                    {"time": 1794515686, "states": {}},
+                ):
+                    conn.execute(
+                        text("""
+                            UPDATE bronze.raw_aviation
+                            SET payload = CAST(:payload AS JSONB)
+                            WHERE id = :id
+                        """),
+                        {"id": bronze_id, "payload": json.dumps(invalid_payload)},
+                    )
+                    assert conn.execute(
+                        get_stale_silver_cleanup_query()
+                    ).rowcount == 0
+                    assert conn.execute(get_silver_query()).rowcount == 0
+                    assert conn.execute(
+                        text("""
+                            SELECT COUNT(*) FROM silver.aircraft_states
+                            WHERE bronze_id = :id
+                        """),
+                        {"id": bronze_id},
+                    ).scalar_one() == 1
             finally:
                 transaction.rollback()
     finally:
