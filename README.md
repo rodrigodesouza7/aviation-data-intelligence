@@ -186,8 +186,16 @@ O Airflow utiliza o driver `psycopg2`, compatível com a versão do SQLAlchemy p
 - Reprocessamento incremental disponível.
 - Testes automatizados implementados.
 - DAG de reprocessamento manual validado no banco de testes.
-- A ingestão automática periódica pelo Airflow ainda não está implementada.
+- A DAG de ingestão periódica foi implementada, mas sua execução agendada ainda precisa ser validada no Airflow local.
 - O ambiente Docker depende de um PostgreSQL acessível no host.
 - Dashboard Streamlit implementado para visualização dos indicadores da camada Gold.
 - O histórico validado contém apenas dois snapshots reais, insuficientes para análise de tendências.
 - A aplicação não realiza monitoramento de tráfego aéreo em tempo real.
+
+## Ingestão agendada (ambiente de testes)
+
+A DAG `aviation_ingestion_scheduled_test` executa a coleta OpenSky e a reconciliação Silver/Gold a cada 30 minutos (`*/30 * * * *`, UTC). Ela é criada **pausada** e bloqueia qualquer `DB_NAME` diferente de `aviation_data_intelligence_test`.
+
+Após iniciar o Airflow e conferir as variáveis do arquivo privado `.env.airflow`, ative manualmente a DAG na interface em http://localhost:8080. A execução requer acesso à API OpenSky e ao PostgreSQL do host. O Airflow pode tentar novamente uma vez após cinco minutos em caso de erro. O limite de execução da tarefa é de dez minutos.
+
+**Importante:** o GitHub Actions verifica a configuração e a proteção da DAG, mas não executa o scheduler do Airflow nem comprova coletas periódicas reais. Essa validação deve ocorrer no ambiente local antes de declarar a automação operacional.
