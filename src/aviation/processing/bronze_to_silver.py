@@ -36,7 +36,11 @@ def get_silver_query():
             TO_TIMESTAMP((raw.payload->>'time')::DOUBLE PRECISION)
         FROM bronze.raw_aviation AS raw
         CROSS JOIN LATERAL jsonb_array_elements(
-            raw.payload->'states'
+            CASE
+                WHEN jsonb_typeof(raw.payload->'states') = 'array'
+                THEN raw.payload->'states'
+                ELSE '[]'::jsonb
+            END
         ) AS state
         WHERE state->>0 IS NOT NULL
           AND raw.payload->>'time' IS NOT NULL
