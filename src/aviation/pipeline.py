@@ -6,8 +6,7 @@ import logging
 import time
 
 from aviation.ingestion.save_bronze import save_bronze
-from aviation.processing.bronze_to_silver import main as process_silver
-from aviation.processing.silver_to_gold import main as process_gold
+from aviation.processing.reconcile import main as reconcile_silver_gold
 
 
 logging.basicConfig(
@@ -38,11 +37,8 @@ def run_pipeline(mode="full"):
                 "Reprocessamento: utilizando dados Bronze existentes"
             )
 
-        logger.info("Transformação Bronze -> Silver")
-        process_silver()
-
-        logger.info("Agregação Silver -> Gold")
-        process_gold()
+        logger.info("Reconciliação transacional Bronze -> Silver -> Gold")
+        reconcile_silver_gold()
 
     except Exception:
         logger.exception("Falha na execução do pipeline")
