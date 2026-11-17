@@ -39,7 +39,28 @@ def get_gold_query():
         LEFT JOIN silver.aircraft_states AS s
             ON s.bronze_id = b.id
         GROUP BY b.id
-        ON CONFLICT (bronze_id) DO NOTHING
+        ON CONFLICT (bronze_id) DO UPDATE SET
+            observation_time = EXCLUDED.observation_time,
+            total_aircraft = EXCLUDED.total_aircraft,
+            aircraft_with_position = EXCLUDED.aircraft_with_position,
+            aircraft_with_altitude = EXCLUDED.aircraft_with_altitude,
+            avg_altitude_m = EXCLUDED.avg_altitude_m,
+            avg_velocity_ms = EXCLUDED.avg_velocity_ms
+        WHERE (
+            gold.air_traffic_summary.observation_time,
+            gold.air_traffic_summary.total_aircraft,
+            gold.air_traffic_summary.aircraft_with_position,
+            gold.air_traffic_summary.aircraft_with_altitude,
+            gold.air_traffic_summary.avg_altitude_m,
+            gold.air_traffic_summary.avg_velocity_ms
+        ) IS DISTINCT FROM (
+            EXCLUDED.observation_time,
+            EXCLUDED.total_aircraft,
+            EXCLUDED.aircraft_with_position,
+            EXCLUDED.aircraft_with_altitude,
+            EXCLUDED.avg_altitude_m,
+            EXCLUDED.avg_velocity_ms
+        )
     """)
 
 
@@ -65,7 +86,7 @@ def main():
             result = connection.execute(query)
 
             print(
-                "Resumos inseridos na Gold: "
+                "Resumos inseridos ou atualizados na Gold: "
                 f"{result.rowcount}"
             )
     finally:
