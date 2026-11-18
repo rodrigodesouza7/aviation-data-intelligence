@@ -985,8 +985,6 @@ Os resultados demonstram funcionamento técnico, mas não comprovam ganhos finan
 
 Profissional de Tecnologia da Informação, com formação em Sistemas de Informação e pós-graduação em Data Science, Machine Learning e Inteligência Artificial.
 
-Interesses e atuação técnica em Engenharia de Dados, Análise de Dados, Business Intelligence, Python, SQL e Inteligência Artificial.
-
 - **GitHub:** [rodrigodesouza7](https://github.com/rodrigodesouza7)
 - **LinkedIn:** [rodrigodesouzasilva](https://www.linkedin.com/in/rodrigodesouzasilva/)
 
@@ -994,9 +992,7 @@ Interesses e atuação técnica em Engenharia de Dados, Análise de Dados, Busin
 
 ## 20. Licença
 
-A licença de distribuição do projeto ainda precisa ser definida e adicionada ao repositório.
-
-Até essa definição, não se deve presumir autorização para reutilização, modificação ou redistribuição do código.
+MIT License 
 
 ---
 
